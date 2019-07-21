@@ -10,7 +10,6 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -56,15 +55,17 @@ public class LafPaintFrame extends javax.swing.JFrame {
     Color selectedColor;
     float strength = 1;
     
-    Map<String, Draw> actions = new HashMap<String, Draw>();
+    Map<String, Draw> actions = new HashMap<>();
     String mode = "LINE";
     
     Action saveAction = new AbstractAction("保存"){
+        @Override
         public void actionPerformed(ActionEvent e) {
             saveActionExec();
         }
     };
     Action undoAction = new AbstractAction("元に戻す"){
+        @Override
         public void actionPerformed(ActionEvent e) {
             undoMan.undo();
             undoUpdate();
@@ -72,6 +73,7 @@ public class LafPaintFrame extends javax.swing.JFrame {
         
     };
     Action redoAction = new AbstractAction("再実行"){
+        @Override
         public void actionPerformed(ActionEvent e) {
             undoMan.redo();
             undoUpdate();
@@ -134,10 +136,8 @@ public class LafPaintFrame extends javax.swing.JFrame {
                 selectedColor = tb.getBackground();
                 first = false;
             }
-            tb.addActionListener(new ActionListener(){
-                public void actionPerformed(ActionEvent ae) {
-                    selectColor(((JToggleButton)ae.getSource()).getBackground());
-                }
+            tb.addActionListener(ae -> {
+                selectColor(((JToggleButton)ae.getSource()).getBackground());
             });
         }
         
@@ -155,18 +155,21 @@ public class LafPaintFrame extends javax.swing.JFrame {
                 d.canvasMousePressed(e);
             }
 
+            @Override
             public void mouseReleased(MouseEvent e) {
                 Draw d = actions.get(getMode());
                 if(d == null) return;
                 d.canvasMouseReleased(e);
             }
 
+            @Override
             public void mouseEntered(MouseEvent e) {
                 Draw d = actions.get(getMode());
                 if(d == null) return;
                 d.canvasMouseEntered(e);
             }
 
+            @Override
             public void mouseExited(MouseEvent e) {
                 Draw d = actions.get(getMode());
                 if(d == null) return;
@@ -175,12 +178,14 @@ public class LafPaintFrame extends javax.swing.JFrame {
 
         });
         canvas.addMouseMotionListener(new MouseMotionListener(){
+            @Override
             public void mouseDragged(MouseEvent e) {
                 Draw d = actions.get(getMode());
                 if(d == null) return;
                 d.canvasMouseDragged(e);
             }
 
+            @Override
             public void mouseMoved(MouseEvent e) {
             }
         });
@@ -267,21 +272,27 @@ public class LafPaintFrame extends javax.swing.JFrame {
     }
     
     abstract class UndoableDrawAction implements UndoableEdit{
+        @Override
         public boolean canUndo() {
             return true;
         }
+        @Override
         public boolean canRedo() {
             return true;
         }
+        @Override
         public void die() {
             //throw new UnsupportedOperationException("Not supported yet.");
         }
+        @Override
         public boolean addEdit(UndoableEdit anEdit) {
             return false;
         }
+        @Override
         public boolean replaceEdit(UndoableEdit anEdit) {
             return false;
         }
+        @Override
         public boolean isSignificant() {
             return true;
         }
@@ -290,24 +301,29 @@ public class LafPaintFrame extends javax.swing.JFrame {
     class LineUndo extends UndoableDrawAction{
         Freeline fl;
 
-        public LineUndo(kis.laftanmv.LafPaintFrame.Freeline fl) {
+        public LineUndo(Freeline fl) {
             this.fl = fl;
         }
         
+        @Override
         public void undo() throws CannotUndoException {
             lines.remove(fl);
             canvas.repaint();
         }
+        @Override
         public void redo() throws CannotRedoException {
             lines.add(fl);
             canvas.repaint();
         }
+        @Override
         public String getPresentationName() {
             return "線の取り消し";
         }
+        @Override
         public String getUndoPresentationName() {
             return "線を取り消す";
         }
+        @Override
         public String getRedoPresentationName() {
             return "線を再実行";
         }
@@ -316,28 +332,33 @@ public class LafPaintFrame extends javax.swing.JFrame {
     class FillUndo extends UndoableDrawAction{
         Freeline fl;
 
-        public FillUndo(kis.laftanmv.LafPaintFrame.Freeline fl) {
+        public FillUndo(Freeline fl) {
             this.fl = fl;
         }
         
+        @Override
         public void undo() throws CannotUndoException {
             fills.remove(fl);
             canvas.repaint();
         }
 
+        @Override
         public void redo() throws CannotRedoException {
             fills.add(fl);
             canvas.repaint();
         }
 
+        @Override
         public String getPresentationName() {
             return "塗りの取り消し";
         }
 
+        @Override
         public String getUndoPresentationName() {
             return "塗りを取り消す";
         }
 
+        @Override
         public String getRedoPresentationName() {
             return "塗りを再実行";
         }
@@ -352,6 +373,7 @@ public class LafPaintFrame extends javax.swing.JFrame {
             this.erasedFill = erasedFill;
         }
         
+        @Override
         public void undo() throws CannotUndoException {
             for(Freeline fl : erasedLine){
                 lines.add(fl);
@@ -362,6 +384,7 @@ public class LafPaintFrame extends javax.swing.JFrame {
             canvas.repaint();
         }
 
+        @Override
         public void redo() throws CannotRedoException {
             for(Freeline fl : erasedLine){
                 lines.remove(fl);
@@ -372,22 +395,25 @@ public class LafPaintFrame extends javax.swing.JFrame {
             canvas.repaint();
         }
 
+        @Override
         public String getPresentationName() {
             return "消しゴムの取り消し";
         }
 
+        @Override
         public String getUndoPresentationName() {
             return "消しゴムを取り消す";
         }
 
+        @Override
         public String getRedoPresentationName() {
             return "消しゴムの再実行";
         }
         
     }
     
-    List<Freeline> lines = new ArrayList<Freeline>();
-    List<Freeline> fills = new ArrayList<Freeline>();
+    List<Freeline> lines = new ArrayList<>();
+    List<Freeline> fills = new ArrayList<>();
     GeneralPath candidate;
     Freeline drawingLine;
 
@@ -397,7 +423,8 @@ public class LafPaintFrame extends javax.swing.JFrame {
     }
     
     class DrawFillLine extends DrawFreeLine{
-        void draw(kis.laftanmv.LafPaintFrame.Freeline line) {
+        @Override
+        void draw(Freeline line) {
             fills.add(line);
             UndoableEdit edit = new FillUndo(line);
             addUndoEdit(edit);
@@ -405,7 +432,8 @@ public class LafPaintFrame extends javax.swing.JFrame {
     }
     
     class DrawLine extends DrawFreeLine{
-        void draw(kis.laftanmv.LafPaintFrame.Freeline line) {
+        @Override
+        void draw(Freeline line) {
             lines.add(line);
             UndoableEdit edit = new LineUndo(line);
             addUndoEdit(edit);
@@ -419,7 +447,7 @@ public class LafPaintFrame extends javax.swing.JFrame {
         
         @Override
         void canvasMousePressed(MouseEvent me){
-            pointList = new ArrayList<Point2D>();
+            pointList = new ArrayList<>();
             pointList.add(new Point2D.Double(me.getPoint().x, me.getPoint().y));
             drawingLine = new Freeline();
             drawingLine.color = selectedColor;
@@ -475,7 +503,7 @@ public class LafPaintFrame extends javax.swing.JFrame {
         }
 
     }
-    class Draw{
+    abstract class Draw{
         void canvasMousePressed(MouseEvent me){
         }
         void canvasMouseReleased(MouseEvent me){
@@ -489,13 +517,13 @@ public class LafPaintFrame extends javax.swing.JFrame {
     }
     
     class Erase extends Draw{
-        List<Freeline> ll = new ArrayList<LafPaintFrame.Freeline>();
-        List<Freeline> ff = new ArrayList<LafPaintFrame.Freeline>();
+        List<Freeline> ll = new ArrayList<>();
+        List<Freeline> ff = new ArrayList<>();
 
         @Override
         void canvasMousePressed(MouseEvent me) {
-            ll = new ArrayList<LafPaintFrame.Freeline>();
-            ff = new ArrayList<LafPaintFrame.Freeline>();
+            ll = new ArrayList<>();
+            ff = new ArrayList<>();
         }
 
         @Override
@@ -763,9 +791,11 @@ private void btnColorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
         }
         //jfc.setFileFilter(new FileNameExtensionFilter("PNGファイル", "png"));
         jfc.setFileFilter(new FileFilter(){
+            @Override
             public boolean accept(File f) {
                 return f.getAbsolutePath().toLowerCase().endsWith(".png");
             }
+            @Override
             public String getDescription() {
                 return "PNGファイル";
             }
@@ -792,10 +822,8 @@ private void btnColorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new LafPaintFrame().setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            new LafPaintFrame().setVisible(true);
         });
     }
     
